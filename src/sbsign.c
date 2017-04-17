@@ -69,6 +69,7 @@ static struct option options[] = {
 	{ "output", required_argument, NULL, 'o' },
 	{ "cert", required_argument, NULL, 'c' },
 	{ "key", required_argument, NULL, 'k' },
+	{ "golden_pcr", required_argument, NULL, 'g' },
 	{ "detached", no_argument, NULL, 'd' },
 	{ "verbose", no_argument, NULL, 'v' },
 	{ "help", no_argument, NULL, 'h' },
@@ -84,6 +85,7 @@ static void usage(void)
 		"Options:\n"
 		"\t--key <keyfile>    signing key (PEM-encoded RSA "
 						"private key)\n"
+		"\t--golden_pcr <golden_pcr_value> signing golden key (direct value)\n"
 		"\t--cert <certfile>  certificate (x509 certificate)\n"
 		"\t--detached         write a detached signature, instead of\n"
 		"\t                    a signed binary\n"
@@ -111,7 +113,7 @@ static void set_default_outfilename(struct sign_context *ctx)
 
 int main(int argc, char **argv)
 {
-	const char *keyfilename, *certfilename;
+	const char *keyfilename, *certfilename, *golden_pcr_str;
 	struct sign_context *ctx;
 	uint8_t *buf, *tmp;
 	int rc, c, sigsize;
@@ -123,7 +125,7 @@ int main(int argc, char **argv)
 
 	for (;;) {
 		int idx;
-		c = getopt_long(argc, argv, "o:c:k:dvVh", options, &idx);
+		c = getopt_long(argc, argv, "o:c:k:g:dvVh", options, &idx);
 		if (c == -1)
 			break;
 
@@ -136,6 +138,29 @@ int main(int argc, char **argv)
 			break;
 		case 'k':
 			keyfilename = optarg;
+			break;
+		case 'g':
+			{
+			unsigned char c[3];
+			int i;
+			unsigned char *p_tmp;
+			golden_pcr_str = optarg;
+			golden_pcr = talloc_zero(NULL, struct golden_pcr_t);
+			memset(golden_pcr, 0, sizeof(golden_pcr));
+			for (i = 0 ; i < 40 ; i=i+2) {
+				if (i > strlen(golden_pcr_str)) break;
+				memset(c, 0, sizeof(c));
+				c[0] = golden_pcr_str[i];
+				c[1] = golden_pcr_str[i+1];
+				golden_pcr[i>>1] = (uint8_t)strtoul(c, p_tmp, 16);
+			}
+			fprintf(stdout, "\n");
+			fprintf(stdout, "golden_pcr_value ");
+			for (i = 0 ; i < 20 ; i++) {
+				fprintf(stdout, "%2X ", golden_pcr[i]);
+			}
+			fprintf(stdout, "\n");
+			}
 			break;
 		case 'd':
 			ctx->detached = 1;
@@ -170,6 +195,12 @@ int main(int argc, char **argv)
 	if (!keyfilename) {
 		fprintf(stderr,
 			"error: No key specified (with --key)\n");
+		usage();
+		return EXIT_FAILURE;
+	}
+	if (!golden_pcr_str) {
+		fprintf(stderr,
+			"error: No golden_pcr_value specified (with --golden_pcr)\n");
 		usage();
 		return EXIT_FAILURE;
 	}

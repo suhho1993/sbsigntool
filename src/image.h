@@ -103,6 +103,10 @@ struct cert_table_header {
 	uint16_t type;
 } __attribute__((packed));
 
+struct golden_pcr_t {
+	uint8_t value[32];
+};
+
 struct image *image_load(const char *filename);
 
 int image_hash_sha256(struct image *image, uint8_t digest[]);
@@ -110,6 +114,7 @@ int image_add_signature(struct image *, void *sig, int size);
 void image_remove_signature(struct image *image);
 int image_write(struct image *image, const char *filename);
 int image_write_detached(struct image *image, const char *filename);
+uint8_t *golden_pcr;
 
 #endif /* IMAGE_H */
 

@@ -174,7 +174,11 @@ int IDC_set(PKCS7 *p7, PKCS7_SIGNER_INFO *si, struct image *image)
 			"spcPEImageData",
 			"PE Image Data");
 
-	image_hash_sha256(image, sha);
+	if (!golden_pcr) {
+		image_hash_sha256(image, sha);
+	} else {
+		memcpy(sha, golden_pcr, SHA256_DIGEST_LENGTH);
+	}
 
 	idc = IDC_new();
 	peid = IDC_PEID_new();
