@@ -36,6 +36,9 @@
 
 #include <openssl/pkcs7.h>
 
+#define SHA1_DIGEST_LENGTH 20
+
+
 struct idc;
 
 int IDC_set(PKCS7 *p7, PKCS7_SIGNER_INFO *si, struct image *image);

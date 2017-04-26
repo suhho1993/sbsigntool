@@ -177,7 +177,7 @@ int IDC_set(PKCS7 *p7, PKCS7_SIGNER_INFO *si, struct image *image)
 	if (!golden_pcr) {
 		image_hash_sha256(image, sha);
 	} else {
-		memcpy(sha, golden_pcr, SHA256_DIGEST_LENGTH);
+		memcpy(sha, golden_pcr, SHA1_DIGEST_LENGTH);
 	}
 
 	idc = IDC_new();

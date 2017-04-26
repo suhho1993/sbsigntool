@@ -61,6 +61,7 @@ struct sign_context {
 	struct image *image;
 	const char *infilename;
 	const char *outfilename;
+	uint8_t *pcr;
 	int verbose;
 	int detached;
 };
@@ -161,6 +162,7 @@ int main(int argc, char **argv)
 			}
 			fprintf(stdout, "\n");
 			}
+			ctx->pcr= golden_pcr;
 			break;
 		case 'd':
 			ctx->detached = 1;

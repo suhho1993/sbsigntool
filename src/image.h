@@ -104,7 +104,7 @@ struct cert_table_header {
 } __attribute__((packed));
 
 struct golden_pcr_t {
-	uint8_t value[32];
+	uint8_t value[20];
 };
 
 struct image *image_load(const char *filename);
