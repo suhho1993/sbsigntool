@@ -119,6 +119,8 @@ int main(int argc, char **argv)
 	uint8_t *buf, *tmp;
 	int rc, c, sigsize;
 
+	BIO *idcbio
+
 	ctx = talloc_zero(NULL, struct sign_context);
 
 	keyfilename = NULL;
@@ -206,7 +208,7 @@ int main(int argc, char **argv)
 		usage();
 		return EXIT_FAILURE;
 	}
-
+			
 	ctx->image = image_load(ctx->infilename);
 	if (!ctx->image)
 		return EXIT_FAILURE;
@@ -241,7 +243,7 @@ int main(int argc, char **argv)
 
 	PKCS7_content_new(p7, NID_pkcs7_data);
 
-	rc = IDC_set(p7, si, ctx->image);
+	rc = IDC_set(p7, si, ctx->image, golden_pcr);
 	if (rc)
 		return EXIT_FAILURE;
 

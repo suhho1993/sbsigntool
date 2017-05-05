@@ -41,7 +41,7 @@
 
 struct idc;
 
-int IDC_set(PKCS7 *p7, PKCS7_SIGNER_INFO *si, struct image *image);
+int IDC_set(PKCS7 *p7, PKCS7_SIGNER_INFO *si, struct image *image, uint8_t *pcr_val);
 struct idc *IDC_get(PKCS7 *p7, BIO *bio);
 int IDC_check_hash(struct idc *idc, struct image *image);
 

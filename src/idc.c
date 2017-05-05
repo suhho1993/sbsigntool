@@ -151,16 +151,18 @@ const char *sha256_str(const uint8_t *hash)
 	static char s[SHA256_DIGEST_LENGTH * 2 + 1];
 	int i;
 
+	memset(s,0,sizeof(s));
 	for (i = 0; i < SHA256_DIGEST_LENGTH; i++)
 		snprintf(s + i * 2, 3, "%02x", hash[i]);
 
 	return s;
 }
 
-int IDC_set(PKCS7 *p7, PKCS7_SIGNER_INFO *si, struct image *image)
+int IDC_set(PKCS7 *p7, PKCS7_SIGNER_INFO *si, struct image *image, uint8_t *pcr_val)
 {
 	uint8_t *buf, *tmp, sha[SHA256_DIGEST_LENGTH];
-	int idc_nid, peid_nid, len, rc;
+	const unsigned char sha_str[SHA256_DIGEST_LENGTH * 2 + 1]; 
+	int idc_nid, peid_nid, len, rc, i;
 	IDC_PEID *peid;
 	ASN1_STRING *s;
 	ASN1_TYPE *t;
@@ -174,12 +176,17 @@ int IDC_set(PKCS7 *p7, PKCS7_SIGNER_INFO *si, struct image *image)
 			"spcPEImageData",
 			"PE Image Data");
 
-	if (!golden_pcr) {
+	memset(sha,0,sizeof(sha));
+	memset(sha_str,0,sizeof(sha_str));
+	if (!pcr_val){
+		fprintf(stdout,"nopcr\n");
 		image_hash_sha256(image, sha);
 	} else {
-		memcpy(sha, golden_pcr, SHA1_DIGEST_LENGTH);
+		for (i = 0; i < SHA1_DIGEST_LENGTH; i++){
+			snprintf(sha_str + i * 2, 3, "%02x", pcr_val[i]);
+		}
+	
 	}
-
 	idc = IDC_new();
 	peid = IDC_PEID_new();
 
@@ -198,7 +205,11 @@ int IDC_set(PKCS7 *p7, PKCS7_SIGNER_INFO *si, struct image *image)
         idc->digest->alg->parameter = ASN1_TYPE_new();
         idc->digest->alg->algorithm = OBJ_nid2obj(NID_sha256);
         idc->digest->alg->parameter->type = V_ASN1_NULL;
-        ASN1_OCTET_STRING_set(idc->digest->digest, sha, sizeof(sha));
+	if(!pcr_val)
+		ASN1_OCTET_STRING_set(idc->digest->digest, sha, sizeof(sha));
+	else {
+		ASN1_OCTET_STRING_set(idc->digest->digest, sha_str, sizeof(sha_str));
+	}
 
 	len = i2d_IDC(idc, NULL);
 	tmp = buf = talloc_array(image, uint8_t, len);
