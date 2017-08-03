@@ -312,7 +312,7 @@ int main(int argc, char **argv)
 	}
 
 	idcbio = BIO_new(BIO_s_mem());
-	idc = IDC_get(p7, idcbio);
+	idc = IDC_get(p7, NULL);//idcbio);
 	if (!idc)
 		goto out;
 

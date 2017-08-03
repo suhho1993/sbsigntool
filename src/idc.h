@@ -35,11 +35,53 @@
 #include "image.h"
 
 #include <openssl/pkcs7.h>
+#include <openssl/asn1t.h>
+#include <openssl/evp.h>
+#include <openssl/err.h>
+#include <openssl/x509.h>
+
+#include <ccan/talloc/talloc.h>
+
 
 #define SHA1_DIGEST_LENGTH 20
 
+typedef struct idc_type_value {
+	ASN1_OBJECT		*type;
+	ASN1_TYPE		*value;
+} IDC_TYPE_VALUE;
 
-struct idc;
+typedef struct idc_string {
+	int type;
+	union {
+		ASN1_BMPSTRING	*unicode;
+		ASN1_IA5STRING	*ascii;
+	} value;
+} IDC_STRING;
+
+typedef struct idc_link {
+	int type;
+	union {
+		ASN1_NULL	*url;
+		ASN1_NULL	*moniker;
+		IDC_STRING	*file;
+	} value;
+} IDC_LINK;
+
+typedef struct idc_pe_image_data {
+        ASN1_BIT_STRING		*flags;
+        IDC_LINK		*file;
+} IDC_PEID;
+
+typedef struct idc_digest {
+        X509_ALGOR              *alg;
+        ASN1_OCTET_STRING       *digest;
+} IDC_DIGEST;
+
+typedef struct idc {
+        IDC_TYPE_VALUE  *data;
+        IDC_DIGEST      *digest;
+} IDC;
+
 
 int IDC_set(PKCS7 *p7, PKCS7_SIGNER_INFO *si, struct image *image, uint8_t *pcr_val);
 struct idc *IDC_get(PKCS7 *p7, BIO *bio);

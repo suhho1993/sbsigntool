@@ -43,14 +43,12 @@
 #include <getopt.h>
 
 #include <openssl/pem.h>
-#include <openssl/pkcs7.h>
-#include <openssl/err.h>
-#include <openssl/evp.h>
 #include <openssl/asn1.h>
-#include <openssl/asn1t.h>
+#include <openssl/bio.h>
 
 #include <ccan/talloc/talloc.h>
 
+#include "sbverify.h"
 #include "idc.h"
 #include "image.h"
 #include "fileio.h"
@@ -118,8 +116,6 @@ int main(int argc, char **argv)
 	struct sign_context *ctx;
 	uint8_t *buf, *tmp;
 	int rc, c, sigsize;
-
-	BIO *idcbio
 
 	ctx = talloc_zero(NULL, struct sign_context);
 
@@ -258,6 +254,27 @@ int main(int argc, char **argv)
 		image_write_detached(ctx->image, ctx->outfilename);
 	else
 		image_write(ctx->image, ctx->outfilename);
+
+	//TESTING 
+
+	BIO *idcbio;
+	idcbio= BIO_new(BIO_s_mem());
+
+	struct idc *checkidc;
+	checkidc=IDC_get(p7, idcbio);
+	
+	if(!checkidc)
+		fprintf(stdout, "error getting idc\n");
+	
+	const unsigned char *idcbuf;
+	ASN1_STRING *idcstr;
+
+	idcstr= checkidc->digest->digest;
+	idcbuf=ASN1_STRING_data(idcstr);
+
+
+	fprintf(stdout, " got:       %s\n", idcbuf);
+//
 
 	talloc_free(ctx);
 

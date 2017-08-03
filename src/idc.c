@@ -31,20 +31,8 @@
  */
 #include <stdint.h>
 #include <string.h>
-#include <openssl/asn1t.h>
-#include <openssl/evp.h>
-#include <openssl/err.h>
-#include <openssl/pkcs7.h>
-#include <openssl/x509.h>
-
-#include <ccan/talloc/talloc.h>
 
 #include "idc.h"
-
-typedef struct idc_type_value {
-	ASN1_OBJECT		*type;
-	ASN1_TYPE		*value;
-} IDC_TYPE_VALUE;
 
 ASN1_SEQUENCE(IDC_TYPE_VALUE) = {
 	ASN1_SIMPLE(IDC_TYPE_VALUE, type, ASN1_OBJECT),
@@ -53,29 +41,12 @@ ASN1_SEQUENCE(IDC_TYPE_VALUE) = {
 
 IMPLEMENT_ASN1_FUNCTIONS(IDC_TYPE_VALUE);
 
-typedef struct idc_string {
-	int type;
-	union {
-		ASN1_BMPSTRING	*unicode;
-		ASN1_IA5STRING	*ascii;
-	} value;
-} IDC_STRING;
-
 ASN1_CHOICE(IDC_STRING) = {
 	ASN1_IMP(IDC_STRING, value.unicode, ASN1_BMPSTRING, 0),
 	ASN1_IMP(IDC_STRING, value.ascii, ASN1_IA5STRING, 1),
 } ASN1_CHOICE_END(IDC_STRING);
 
 IMPLEMENT_ASN1_FUNCTIONS(IDC_STRING);
-
-typedef struct idc_link {
-	int type;
-	union {
-		ASN1_NULL	*url;
-		ASN1_NULL	*moniker;
-		IDC_STRING	*file;
-	} value;
-} IDC_LINK;
 
 ASN1_CHOICE(IDC_LINK) = {
 	ASN1_IMP(IDC_LINK, value.url, ASN1_NULL, 0),
@@ -85,11 +56,6 @@ ASN1_CHOICE(IDC_LINK) = {
 
 IMPLEMENT_ASN1_FUNCTIONS(IDC_LINK);
 
-typedef struct idc_pe_image_data {
-        ASN1_BIT_STRING		*flags;
-        IDC_LINK		*file;
-} IDC_PEID;
-
 ASN1_SEQUENCE(IDC_PEID) = {
         ASN1_SIMPLE(IDC_PEID, flags, ASN1_BIT_STRING),
         ASN1_EXP(IDC_PEID, file, IDC_LINK, 0),
@@ -97,22 +63,12 @@ ASN1_SEQUENCE(IDC_PEID) = {
 
 IMPLEMENT_ASN1_FUNCTIONS(IDC_PEID);
 
-typedef struct idc_digest {
-        X509_ALGOR              *alg;
-        ASN1_OCTET_STRING       *digest;
-} IDC_DIGEST;
-
 ASN1_SEQUENCE(IDC_DIGEST) = {
         ASN1_SIMPLE(IDC_DIGEST, alg, X509_ALGOR),
         ASN1_SIMPLE(IDC_DIGEST, digest, ASN1_OCTET_STRING),
 } ASN1_SEQUENCE_END(IDC_DIGEST)
 
 IMPLEMENT_ASN1_FUNCTIONS(IDC_DIGEST)
-
-typedef struct idc {
-        IDC_TYPE_VALUE  *data;
-        IDC_DIGEST      *digest;
-} IDC;
 
 ASN1_SEQUENCE(IDC) = {
         ASN1_SIMPLE(IDC, data, IDC_TYPE_VALUE),
@@ -161,7 +117,7 @@ const char *sha256_str(const uint8_t *hash)
 int IDC_set(PKCS7 *p7, PKCS7_SIGNER_INFO *si, struct image *image, uint8_t *pcr_val)
 {
 	uint8_t *buf, *tmp, sha[SHA256_DIGEST_LENGTH];
-	const unsigned char sha_str[SHA256_DIGEST_LENGTH * 2 + 1]; 
+	//const unsigned char sha_str[SHA256_DIGEST_LENGTH * 2 + 1]; 
 	int idc_nid, peid_nid, len, rc, i;
 	IDC_PEID *peid;
 	ASN1_STRING *s;
@@ -177,14 +133,15 @@ int IDC_set(PKCS7 *p7, PKCS7_SIGNER_INFO *si, struct image *image, uint8_t *pcr_
 			"PE Image Data");
 
 	memset(sha,0,sizeof(sha));
-	memset(sha_str,0,sizeof(sha_str));
+	//memset(sha_str,0,sizeof(sha_str));
 	if (!pcr_val){
 		fprintf(stdout,"nopcr\n");
 		image_hash_sha256(image, sha);
 	} else {
-		for (i = 0; i < SHA1_DIGEST_LENGTH; i++){
-			snprintf(sha_str + i * 2, 3, "%02x", pcr_val[i]);
-		}
+		memcpy(sha,pcr_val,SHA1_DIGEST_LENGTH);
+	//	for (i = 0; i < SHA1_DIGEST_LENGTH; i++){
+	//		snprintf(sha_str + i * 2, 3, "%02x", pcr_val[i]);
+		
 	
 	}
 	idc = IDC_new();
@@ -208,7 +165,7 @@ int IDC_set(PKCS7 *p7, PKCS7_SIGNER_INFO *si, struct image *image, uint8_t *pcr_
 	if(!pcr_val)
 		ASN1_OCTET_STRING_set(idc->digest->digest, sha, sizeof(sha));
 	else {
-		ASN1_OCTET_STRING_set(idc->digest->digest, sha_str, sizeof(sha_str));
+		ASN1_OCTET_STRING_set(idc->digest->digest, sha, sizeof(sha));
 	}
 
 	len = i2d_IDC(idc, NULL);
@@ -242,6 +199,7 @@ int IDC_set(PKCS7 *p7, PKCS7_SIGNER_INFO *si, struct image *image, uint8_t *pcr_
 	ASN1_TYPE_set(t, V_ASN1_SEQUENCE, s);
 	PKCS7_set0_type_other(p7->d.sign->contents, idc_nid, t);
 
+
 	return 0;
 }
 
@@ -271,6 +229,9 @@ struct idc *IDC_get(PKCS7 *p7, BIO *bio)
 			idclen = (idcbuf[2] << 8) +
 				 idcbuf[3];
 			idcbuf += 4;
+		} else if ((tmp & 0x81)==0x81){
+			idclen = idcbuf[2];
+			idcbuf +=3;
 		} else {
 			fprintf(stderr, "Invalid ASN.1 data in "
 					"IndirectDataContext?\n");
@@ -294,23 +255,22 @@ int IDC_check_hash(struct idc *idc, struct image *image)
 	/* check hash algorithm sanity */
 	if (OBJ_cmp(idc->digest->alg->algorithm, OBJ_nid2obj(NID_sha256))) {
 		fprintf(stderr, "Invalid algorithm type\n");
-		return -1;
+	//	return -1;
 	}
 
 	str = idc->digest->digest;
+	buf = (const unsigned char *)idc->digest->digest;
 	if (ASN1_STRING_length(str) != sizeof(sha)) {
 		fprintf(stderr, "Invalid algorithm length\n");
-		return -1;
+	//	return -1;
 	}
 
 	/* check hash against the one we calculated from the image */
 	buf = ASN1_STRING_data(str);
 	if (memcmp(buf, sha, sizeof(sha))) {
 		fprintf(stderr, "Hash doesn't match image\n");
-		fprintf(stderr, " got:       %s\n", sha256_str(buf));
+		fprintf(stderr, " got:       %s\n", buf);
 		fprintf(stderr, " expecting: %s\n", sha256_str(sha));
 		return -1;
 	}
-
-	return 0;
 }
