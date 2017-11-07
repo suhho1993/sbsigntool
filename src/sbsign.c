@@ -48,7 +48,6 @@
 
 #include <ccan/talloc/talloc.h>
 
-#include "sbverify.h"
 #include "idc.h"
 #include "image.h"
 #include "fileio.h"
@@ -146,7 +145,7 @@ int main(int argc, char **argv)
 			golden_pcr_str = optarg;
 			golden_pcr = talloc_zero(NULL, struct golden_pcr_t);
 			memset(golden_pcr, 0, sizeof(golden_pcr));
-			for (i = 0 ; i < 40 ; i=i+2) {
+			for (i = 0 ; i < 64 ; i=i+2) {
 				if (i > strlen(golden_pcr_str)) break;
 				memset(c, 0, sizeof(c));
 				c[0] = golden_pcr_str[i];
@@ -154,8 +153,8 @@ int main(int argc, char **argv)
 				golden_pcr[i>>1] = (uint8_t)strtoul(c, p_tmp, 16);
 			}
 			fprintf(stdout, "\n");
-			fprintf(stdout, "golden_pcr_value ");
-			for (i = 0 ; i < 20 ; i++) {
+			fprintf(stdout, "golden_pcr_value 32");
+			for (i = 0 ; i < 32 ; i++) {
 				fprintf(stdout, "%2X ", golden_pcr[i]);
 			}
 			fprintf(stdout, "\n");

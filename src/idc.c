@@ -138,7 +138,7 @@ int IDC_set(PKCS7 *p7, PKCS7_SIGNER_INFO *si, struct image *image, uint8_t *pcr_
 		fprintf(stdout,"nopcr\n");
 		image_hash_sha256(image, sha);
 	} else {
-		memcpy(sha,pcr_val,SHA1_DIGEST_LENGTH);
+		memcpy(sha,pcr_val,SHA256_DIGEST_LENGTH);
 	//	for (i = 0; i < SHA1_DIGEST_LENGTH; i++){
 	//		snprintf(sha_str + i * 2, 3, "%02x", pcr_val[i]);
 		
