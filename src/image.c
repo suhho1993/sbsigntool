@@ -588,7 +588,7 @@ int image_write(struct image *image, const char *filename)
 		image->data_dir_sigtable->size = 0;
 	}
 
-	//image_pecoff_update_checksum(image, &cert_table_header);
+	image_pecoff_update_checksum(image, &cert_table_header);
 
 	fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	if (fd < 0) {
@@ -602,7 +602,7 @@ int image_write(struct image *image, const char *filename)
 	if (!is_signed)
 		goto out;
 
-	//rc = write_all(fd, &cert_table_header, sizeof(cert_table_header));
+	rc = write_all(fd, &cert_table_header, sizeof(cert_table_header));
 	if (!rc)
 		goto out;
 

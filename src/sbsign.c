@@ -153,7 +153,7 @@ int main(int argc, char **argv)
 				golden_pcr[i>>1] = (uint8_t)strtoul(c, p_tmp, 16);
 			}
 			fprintf(stdout, "\n");
-			fprintf(stdout, "golden_pcr_value 32");
+			fprintf(stdout, "golden_pcr_value ");
 			for (i = 0 ; i < 32 ; i++) {
 				fprintf(stdout, "%2X ", golden_pcr[i]);
 			}
@@ -272,7 +272,7 @@ int main(int argc, char **argv)
 	idcbuf=ASN1_STRING_data(idcstr);
 
 
-	fprintf(stdout, " got:       %s\n", idcbuf);
+	fprintf(stdout, "got:       %s\n", idcbuf);
 //
 
 	talloc_free(ctx);
