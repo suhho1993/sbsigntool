@@ -54,14 +54,14 @@
 
 static const char *toolname = "sbsign";
 
-struct sign_context {
+typedef struct sign_context {
 	struct image *image;
 	const char *infilename;
 	const char *outfilename;
 	uint8_t *pcr;
 	int verbose;
 	int detached;
-};
+} sign_context;
 
 static struct option options[] = {
 	{ "output", required_argument, NULL, 'o' },
@@ -109,7 +109,7 @@ static void set_default_outfilename(struct sign_context *ctx)
 			ctx->infilename, extension);
 }
 
-int main(int argc, char **argv)
+int DoSBsign(int argc, char **argv)
 {
 	const char *keyfilename, *certfilename, *golden_pcr_str;
 	struct sign_context *ctx;
@@ -280,3 +280,21 @@ int main(int argc, char **argv)
 	return EXIT_SUCCESS;
 }
 
+
+int main(int argc, char **argv)
+{
+	char* argv_t[10];
+	argv_t[0]= "sbsign";
+	argv_t[1]= "--key";
+	argv_t[2]= "db-custom.key";
+	argv_t[3]= "--cert";
+	argv_t[4]= "db-custom.crt";
+	argv_t[5]= "--golden_pcr";
+	argv_t[6]= argv[1];
+	argv_t[7]= "--output";
+	argv_t[8]= "../grub.tttt.signed.efi";
+	argv_t[9]= "../grub.hashextend.efi";
+
+
+	return	DoSBsign(10,argv_t);
+}
